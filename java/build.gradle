@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.craftinginterpreters'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+run {
+    standardInput = System.in
+    standardOutput = System.out
+    logging.captureStandardOutput LogLevel.LIFECYCLE
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass = 'com.craftinginterpreters.lox.Lox'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Nice-to-have: Create a task to run Lox examples
+task runExample(type: JavaExec) {
+    group = 'Execution'
+    description = 'Run a Lox example file'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.craftinginterpreters.lox.Lox'
+
+    // Usage: ./gradlew runExample --args="../shared/examples/hello.lox"
+    if (project.hasProperty('args')) {
+        args project.args.split('\\s+')
+    }
+}
