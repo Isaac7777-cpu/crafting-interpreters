@@ -15,12 +15,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-run {
-    standardInput = System.in
-    standardOutput = System.out
-    logging.captureStandardOutput LogLevel.LIFECYCLE
-}
-
 test {
     useJUnitPlatform()
 }
@@ -34,15 +28,60 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-// Nice-to-have: Create a task to run Lox examples
+// Configuration for running GenerateAst
+configurations {
+    tool
+}
+
+// Task to compile the tool classes
+task compileTool(type: JavaCompile) {
+    source = fileTree('src/main/java') {
+        include 'com/craftinginterpreters/tool/GenerateAst.java'
+    }
+    destinationDirectory = file("$buildDir/classes/tool")
+    classpath = sourceSets.main.compileClasspath
+}
+
+// Task to generate AST classes
+task generateAst(type: JavaExec) {
+    group = 'build'
+    description = 'Generate AST classes for Lox'
+
+    // Use the compiled tool classes
+    classpath = files("$buildDir/classes/tool") + sourceSets.main.compileClasspath
+    mainClass = 'com.craftinginterpreters.tool.GenerateAst'
+
+    // Set the output directory for generated files
+    args = ['src/main/java/com/craftinginterpreters/lox']
+
+    dependsOn compileTool
+}
+
+// Configure run task for REPL
+run {
+    standardInput = System.in
+    standardOutput = System.out
+    ignoreExitValue = true
+}
+
+// Task to run Lox examples
 task runExample(type: JavaExec) {
     group = 'Execution'
     description = 'Run a Lox example file'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.craftinginterpreters.lox.Lox'
+    standardInput = System.in
+    standardOutput = System.out
+    ignoreExitValue = true
 
-    // Usage: ./gradlew runExample --args="../shared/examples/hello.lox"
     if (project.hasProperty('args')) {
         args project.args.split('\\s+')
     }
+}
+
+// Make sure AST is generated before compiling main sources
+compileJava {
+    dependsOn generateAst
+    // Exclude the tool package from main compilation
+    exclude 'com/craftinginterpreters/tool/**'
 }
