@@ -2,6 +2,7 @@ package com.craftinginterpreters.lox;
 
 import com.craftinginterpreters.lox.Expr.Assign;
 import com.craftinginterpreters.lox.Expr.Binary;
+import com.craftinginterpreters.lox.Expr.Call;
 import com.craftinginterpreters.lox.Expr.Grouping;
 import com.craftinginterpreters.lox.Expr.Literal;
 import com.craftinginterpreters.lox.Expr.Logical;
@@ -48,6 +49,18 @@ class AstPrinter implements Expr.Visitor<String> {
   @Override
   public String visitLogicalExpr(Logical expr) {
     return parenthesize(expr.operator.lexeme, expr.left, expr.right);
+  }
+
+  @Override
+  public String visitCallExpr(Call expr) {
+    StringBuilder builder = new StringBuilder("(call " + expr.callee + "(");
+    for (int i = 0; i < expr.arguments.size(); i++) {
+      builder.append(expr.arguments.get(i).accept(this));
+
+      if (i != expr.arguments.size() - 1) builder.append(", ");
+    }
+    builder.append("))");
+    return builder.toString();
   }
 
   private String parenthesize(String name, Expr... exprs) {
